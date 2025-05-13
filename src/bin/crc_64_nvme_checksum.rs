@@ -22,6 +22,22 @@ fn calculate_crc_64_simd_from_file(file: &str) -> u64 {
 
     let fh = std::fs::File::open(file).unwrap();
 
+    let meta = fh.metadata().unwrap();
+    nix::fcntl::posix_fadvise(
+        &fh,
+        0,
+        meta.len() as i64,
+        nix::fcntl::PosixFadviseAdvice::POSIX_FADV_SEQUENTIAL,
+    )
+    .unwrap();
+    nix::fcntl::posix_fadvise(
+        &fh,
+        0,
+        meta.len() as i64,
+        nix::fcntl::PosixFadviseAdvice::POSIX_FADV_NOREUSE,
+    )
+    .unwrap();
+
     let mmap = unsafe { MmapOptions::new().map(&fh).unwrap() };
 
     c.write(&mmap);
@@ -35,6 +51,21 @@ fn calculate_crc_64_validate_from_file(file: &str) -> u64 {
     let mut digest = crc.digest();
 
     let fh = std::fs::File::open(file).unwrap();
+    let meta = fh.metadata().unwrap();
+    nix::fcntl::posix_fadvise(
+        &fh,
+        0,
+        meta.len() as i64,
+        nix::fcntl::PosixFadviseAdvice::POSIX_FADV_SEQUENTIAL,
+    )
+    .unwrap();
+    nix::fcntl::posix_fadvise(
+        &fh,
+        0,
+        meta.len() as i64,
+        nix::fcntl::PosixFadviseAdvice::POSIX_FADV_NOREUSE,
+    )
+    .unwrap();
 
     let mmap = unsafe { MmapOptions::new().map(&fh).unwrap() };
 
