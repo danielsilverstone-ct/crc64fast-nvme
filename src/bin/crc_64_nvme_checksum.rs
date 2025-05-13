@@ -1,4 +1,5 @@
 use crc64fast_nvme::Digest;
+use memmap::MmapOptions;
 /// Generates CRC-64/NVME checksums, using SIMD-accelerated
 /// carryless-multiplication, from a file on disk.
 use std::env;
@@ -19,7 +20,11 @@ const CRC_NVME: crc::Algorithm<u64> = crc::Algorithm {
 fn calculate_crc_64_simd_from_file(file: &str) -> u64 {
     let mut c = Digest::new();
 
-    c.write(std::fs::read(file).unwrap().as_slice());
+    let fh = std::fs::File::open(file).unwrap();
+
+    let mmap = unsafe { MmapOptions::new().map(&fh).unwrap() };
+
+    c.write(&mmap);
 
     c.sum64()
 }
@@ -29,7 +34,11 @@ fn calculate_crc_64_validate_from_file(file: &str) -> u64 {
 
     let mut digest = crc.digest();
 
-    digest.update(std::fs::read(file).unwrap().as_slice());
+    let fh = std::fs::File::open(file).unwrap();
+
+    let mmap = unsafe { MmapOptions::new().map(&fh).unwrap() };
+
+    digest.update(&mmap);
 
     digest.finalize()
 }
